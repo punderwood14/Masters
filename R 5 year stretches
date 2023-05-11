@@ -1,0 +1,13 @@
+teamPayroll[, year_interval := cut(teamPayroll$yearID, 
+                                   seq(from=1985, to=2015, by=5), 
+                                   include.lowest = TRUE, 
+                                   right=FALSE, ordered_result = TRUE)]
+
+linRegModelsOver5YearIntervals = teamPayroll[yearID <= 2015, 
+                                             .(payrollModel = list(lm(WinPercent ~ payroll, .SD))), 
+                                             by = year_interval ]
+data = data.table(interval = linRegModelsOver5YearIntervals[[1]],
+                  beta1 = sapply(linRegModelsOver5YearIntervals[[2]], 
+                                function(x) {coefficients(x)[[2]]}), 
+                  adjRSquared = sapply(linRegModelsOver5YearIntervals[[2]], 
+                                function(x) {summary(x)$adj.r.squared}))
