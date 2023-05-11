@@ -12,3 +12,37 @@ for(YEAR_START in YEARS) {
   data = teamPayroll[yearID >= YEAR_START & yearID <= 2015]
   lmodelsAfter[[YEAR_START - 1985 + 1]] = lm(formula = WinPercent ~ payroll, data = data)
 }
+
+
+pitching_data = pitching[yearID >= 1985 & yearID <= 2015,]
+pitching_data = cbind(pitching_data, clusterid=km.model4$cluster)
+
+clusterToRoleMap = data.table(clusterid = c(1,2,3,4), 
+                              role = c('Reliever','Reliever','Closer','Starter'))
+pitching_data[clusterToRoleMap, role := role, on = c(clusterid = "clusterid")]
+
+pitcherRoleSalaries = merge(salaries, pitching_data)
+pitcherRoleSalaries = pitcherRoleSalaries[, .(yearID, teamID, lgID, playerID, salary1M,
+                                              starter = ifelse(role == 'Starter', salary1M, 0.),
+                                              reliever = ifelse(role == 'Reliever', salary1M, 0.),
+                                              closer = ifelse(role == 'Closer', salary1M, 0.))]
+payrollByPitcherRole = pitcherRoleSalaries[,
+                                           .(starter = sum(starter),
+                                             reliever = sum(reliever),
+                                             closer = sum(closer)),
+                                           by=.(teamID, yearID)]
+teamPayrollByPitcherRole = merge(teams, payrollByPitcherRole, by=c("teamID","yearID"))
+
+lm.fit.roles = lm(formula = WinPercent ~ starter + reliever + closer, 
+            data = teamPayrollByPitcherRole[yearID <= 2015])
+
+lm.fit.roleStarterCloser = lm(formula = WinPercent ~ starter + closer, 
+            data = teamPayrollByPitcherRole[yearID <= 2015])
+
+lm.fit.roleStarterReliever = lm(formula = WinPercent ~ starter + reliever,
+            data = teamPayrollByPitcherRole[yearID <= 2015])
+
+lm.fit.roleStarter = lm(formula = WinPercent ~ starter, 
+            data = teamPayrollByPitcherRole[yearID <= 2015])
+
+summary(lm.fit.roles)
