@@ -1,0 +1,14 @@
+YEARS = seq(1985, 2015)
+lmodelsEach = vector("list", length = length(YEARS))
+lmodelsAccu = vector("list", length = length(YEARS))
+lmodelsAfter = vector("list", length = length(YEARS))
+for(YEAR_START in YEARS) {
+  data = teamPayroll[yearID == YEAR_START & yearID <= 2015]
+  lmodelsEach[[YEAR_START - 1985 + 1]] = lm(formula = WinPercent ~ payroll, data = data)
+  
+  data = teamPayroll[yearID <= YEAR_START & yearID <= 2015]
+  lmodelsAccu[[YEAR_START - 1985 + 1]] = lm(formula = WinPercent ~ payroll, data = data)
+  
+  data = teamPayroll[yearID >= YEAR_START & yearID <= 2015]
+  lmodelsAfter[[YEAR_START - 1985 + 1]] = lm(formula = WinPercent ~ payroll, data = data)
+}
