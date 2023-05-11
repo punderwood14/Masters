@@ -1,0 +1,14 @@
+pitching = as.data.table(Pitching)
+pitching = pitching[, c("lgID", "teamID") := 
+                      list(as.character(lgID), as.character(teamID))]
+
+# scale attributes used in clustering first
+pitching[ , c("G_scaled", "GS_scaled", "SV_scaled") := lapply(.SD, function(x) as.double(scale(x))),
+          .SDcols = c("G","GS","SV")]
+
+km.models = vector(mode = "list", length = 9)
+for(k in seq(2,10)) {
+  km.models[[k-1]] = kmeans(pitching[yearID >= 1985 & yearID <= 2015, 
+                                     c("G_scaled","GS_scaled","SV_scaled")], 
+                            centers = k, nstart = 20)
+}
