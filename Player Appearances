@@ -1,0 +1,38 @@
+appearances = as.data.table(Appearances)
+appearances = appearances[, .(yearID, 
+                          lgID = as.character(lgID), 
+                          teamID = as.character(teamID), 
+                          playerID, 
+                          G_all, 
+                          G_batting, G_defense, G_p, G_c, 
+                          G_1b, G_2b, G_3b, G_ss, G_of)]
+appearances = appearances[, c("P", "B", "C", "B1", "B2", "B3", "SS", "OF") := 
+                      list(G_p / G_all, 
+                           ifelse(G_p > 0, 0.0, G_batting / G_all), 
+                           ifelse(G_p > 0, 0.0, G_c / G_defense),
+                           ifelse(G_p > 0, 0.0, G_1b / G_defense),
+                           ifelse(G_p > 0, 0.0, G_2b / G_defense),
+                           ifelse(G_p > 0, 0.0, G_3b / G_defense),
+                           ifelse(G_p > 0, 0.0, G_ss / G_defense),
+                           ifelse(G_p > 0, 0.0, G_of / G_defense))]
+positionSalaries = merge(salaries, appearances)
+positionSalaries = positionSalaries[, .(yearID, teamID, lgID, playerID, salary1M,
+                                        pitcher = salary1M * P,
+                                        batter = salary1M * B,
+                                        catcher = salary1M * C,
+                                        firstBase = salary1M * B1,
+                                        secondBase = salary1M * B2,
+                                        thirdBase = salary1M * B3,
+                                        shortstop = salary1M * SS,
+                                        outfielder = salary1M * OF)]
+payrollByPositions = positionSalaries[, 
+                                      .(pitcher = sum(pitcher),
+                                        batter = sum(batter),
+                                        catcher = sum(catcher),
+                                        firstBase = sum(firstBase),
+                                        secondBase = sum(secondBase),
+                                        thirdBase = sum(thirdBase),
+                                        shortstop = sum(shortstop),
+                                        outfielder = sum(outfielder)), 
+                                      by=.(teamID, yearID)]
+teamPayrollByPositions = merge(teams, payrollByPositions, by=c("teamID","yearID"))
